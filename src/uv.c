@@ -20,12 +20,33 @@
 #include <stdlib.h>
 #include <string.h>
 
+static PyTypeObject tp_tcp;
+
+static PyObject *tp_tcp_new(PyTypeObject* type, PyObject *a, PyObject *b);
+
 static PyObject *do_run(PyObject *a, PyObject *b);
 
 static PyMethodDef methods[] = {
   { "run", do_run, METH_NOARGS, NULL },
   { NULL, NULL, 0, NULL }
 };
+
+
+static PyObject *tp_tcp_new(PyTypeObject *type, PyObject *a, PyObject *b) {
+  uv_tcp_t *handle;
+
+  if ((handle = malloc(sizeof *handle)) == NULL)
+    goto out;
+
+  if (uv_tcp_init(handle)) {
+    free(handle);
+    goto out;
+  }
+
+out:
+  return 0;
+}
+
 
 static PyObject *do_run(PyObject *a, PyObject *b) {
   int r;
@@ -35,13 +56,13 @@ static PyObject *do_run(PyObject *a, PyObject *b) {
   return PyInt_FromLong(r);
 }
 
+
 PyMODINIT_FUNC init(void) {
   PyObject *module;
 
   module = Py_InitModule3("uv", methods, "libuv bindings");
   if (!module)
-    goto out;
+    return;
 
-out:
-  ;
+  tp_tcp.tp_new = tp_tcp_new;
 }
